@@ -116,7 +116,5 @@ func read(r io.Reader) {
 	buf := make([]byte, mlen)
 	_ = binary.Read(r, binary.LittleEndian, &buf)
 
-	if len(buf) > 0 {
-		fmt.Printf("%s\n", string(buf))
-	}
+	fmt.Println("Received: ", string(buf))
 }

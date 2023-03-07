@@ -59,7 +59,7 @@ func (s *Server) Start() {
 	}()
 
 	for {
-		time.Sleep(5 * time.Second)
+		// time.Sleep(5 * time.Second)
 
 		for _, q := range s.queues {
 			m := s.messages.Dequeue()
@@ -109,7 +109,6 @@ func (s *Server) parseMessage(r io.Reader, conn net.Conn) {
 
 		if m.Type == "pub" {
 			s.messages.Enqueue(m.Message)
-			log.Printf("Published message %s\n", m.Message)
 			go s.handleQueue(r, conn)
 		}
 	}
@@ -132,7 +131,6 @@ func (s *Server) handleQueue(r io.Reader, conn net.Conn) {
 			}
 
 			s.messages.Enqueue(m.Message)
-			log.Printf("Published message %s\n", m.Message)
 		}
 	}
 }

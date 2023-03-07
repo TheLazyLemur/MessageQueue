@@ -1,16 +1,27 @@
 package server
 
+import "sync"
+
 type Queue struct {
 	items []string
 	front int
 	rear  int
+	lock  sync.Mutex
 }
 
 func NewQueue() *Queue {
-	return &Queue{make([]string, 0), 0, -1}
+	return &Queue{
+		items: make([]string, 0),
+		front: 0,
+		rear:  -1,
+		lock:  sync.Mutex{},
+	}
 }
 
 func (q *Queue) Enqueue(item string) {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
 	q.rear++
 	if q.rear == len(q.items) {
 		q.items = append(q.items, item)
@@ -20,6 +31,9 @@ func (q *Queue) Enqueue(item string) {
 }
 
 func (q *Queue) Dequeue() string {
+	q.lock.Lock()
+	defer q.lock.Unlock()
+
 	if q.IsEmpty() {
 		return ""
 	}
