@@ -9,12 +9,14 @@ import (
 	"io"
 	"log"
 	"net"
+	"sync"
 	"time"
 )
 
 type Server struct {
 	queues   map[string][]*net.Conn
 	messages *Queue
+	lock     sync.Mutex
 }
 
 type ServerMessage struct {
@@ -27,6 +29,7 @@ func NewServer() *Server {
 	return &Server{
 		queues:   make(map[string][]*net.Conn),
 		messages: NewQueue(),
+		lock:     sync.Mutex{},
 	}
 }
 
@@ -61,6 +64,7 @@ func (s *Server) Start() {
 	for {
 		// time.Sleep(5 * time.Second)
 
+		s.lock.Lock()
 		for _, q := range s.queues {
 			m := s.messages.Dequeue()
 			for _, conn := range q {
@@ -69,6 +73,7 @@ func (s *Server) Start() {
 				}
 			}
 		}
+		s.lock.Unlock()
 	}
 }
 
@@ -103,8 +108,10 @@ func (s *Server) parseMessage(r io.Reader, conn net.Conn) {
 		}
 
 		if m.Type == "join" {
+			s.lock.Lock()
 			s.queues[m.QueueName] = append(s.queues[m.QueueName], &conn)
 			log.Printf("Joined queue %s\n", m.QueueName)
+			s.lock.Unlock()
 		}
 
 		if m.Type == "pub" {

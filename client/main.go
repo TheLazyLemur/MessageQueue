@@ -88,8 +88,9 @@ func publishMessage(conn net.Conn) {
 
 func sendJoinMessage(conn net.Conn) {
 	m := ServerMessage{
-		QueueName: "test",
 		Type:      "join",
+		QueueName: "test",
+		Message:   "",
 	}
 
 	jsonBytes, err := json.Marshal(m)
@@ -112,6 +113,9 @@ func sendJoinMessage(conn net.Conn) {
 func read(r io.Reader) {
 	var mlen int32
 	_ = binary.Read(r, binary.LittleEndian, &mlen)
+	if mlen == 0 {
+		return
+	}
 
 	buf := make([]byte, mlen)
 	_ = binary.Read(r, binary.LittleEndian, &buf)
