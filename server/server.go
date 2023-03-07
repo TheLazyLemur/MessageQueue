@@ -45,12 +45,7 @@ func (s *Server) Start() {
 		log.Fatal(err)
 	}
 
-	go func() {
-		for {
-			time.Sleep(time.Second)
-			s.messages.Enqueue(RandomString(10))
-		}
-	}()
+	// go testQueue(s)
 
 	go func() {
 		for {
@@ -73,6 +68,19 @@ func (s *Server) Start() {
 					sendMessage(*conn, *conn, m)
 				}
 			}
+		}
+	}
+}
+
+func testQueue(s *Server) {
+	count := 0
+	for {
+		time.Sleep(time.Second)
+		s.messages.Enqueue(RandomString(10))
+		count++
+
+		if count >= 10 {
+			break
 		}
 	}
 }
@@ -100,6 +108,29 @@ func (s *Server) parseMessage(r io.Reader, conn net.Conn) {
 		}
 
 		if m.Type == "pub" {
+			s.messages.Enqueue(m.Message)
+			log.Printf("Published message %s\n", m.Message)
+			go s.handleQueue(r, conn)
+		}
+	}
+}
+
+func (s *Server) handleQueue(r io.Reader, conn net.Conn) {
+	for {
+		var keyLen int32
+		_ = binary.Read(r, binary.LittleEndian, &keyLen)
+
+		if keyLen > 0 {
+			msgBuf := make([]byte, keyLen)
+			_ = binary.Read(r, binary.LittleEndian, &msgBuf)
+
+			m := new(ServerMessage)
+
+			err := json.Unmarshal([]byte(msgBuf), &m)
+			if err != nil {
+				log.Fatal("Error converting to struct:", err)
+			}
+
 			s.messages.Enqueue(m.Message)
 			log.Printf("Published message %s\n", m.Message)
 		}
