@@ -22,11 +22,13 @@ type ServerMessage struct {
 
 var (
 	isConsumer bool
+	queueName  string
 )
 
 func main() {
 
 	flag.BoolVar(&isConsumer, "c", true, "consumer mode")
+	flag.StringVar(&queueName, "q", "", "queue name")
 	flag.Parse()
 
 	c, err := net.Dial("tcp", ":3000")
@@ -61,7 +63,7 @@ func publishMessage(conn net.Conn) {
 		time.Sleep(time.Second)
 
 		m := ServerMessage{
-			QueueName: "test",
+			QueueName: queueName,
 			Type:      "pub",
 			Message:   RandomString(10),
 		}
@@ -89,7 +91,7 @@ func publishMessage(conn net.Conn) {
 func sendJoinMessage(conn net.Conn) {
 	m := ServerMessage{
 		Type:      "join",
-		QueueName: "test",
+		QueueName: queueName,
 		Message:   "",
 	}
 

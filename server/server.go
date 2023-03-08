@@ -6,17 +6,18 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net"
 	"sync"
-	"time"
 )
 
 type Server struct {
-	queues   map[string][]*net.Conn
-	messages *Queue
-	lock     sync.Mutex
+	queueNameToRecepient map[string][]*net.Conn
+	messages             *Queue
+	queueNameToQueue     map[string]*Queue
+	lock                 sync.Mutex
 }
 
 type ServerMessage struct {
@@ -27,9 +28,10 @@ type ServerMessage struct {
 
 func NewServer() *Server {
 	return &Server{
-		queues:   make(map[string][]*net.Conn),
-		messages: NewQueue(),
-		lock:     sync.Mutex{},
+		queueNameToRecepient: make(map[string][]*net.Conn),
+		messages:             NewQueue(),
+		lock:                 sync.Mutex{},
+		queueNameToQueue:     make(map[string]*Queue),
 	}
 }
 
@@ -48,8 +50,6 @@ func (s *Server) Start() {
 		log.Fatal(err)
 	}
 
-	// go testQueue(s)
-
 	go func() {
 		for {
 			conn, err := ln.Accept()
@@ -62,31 +62,18 @@ func (s *Server) Start() {
 	}()
 
 	for {
-		// time.Sleep(5 * time.Second)
-
 		s.lock.Lock()
-		for _, q := range s.queues {
-			m := s.messages.Dequeue()
-			for _, conn := range q {
-				if len(m) > 0 {
-					sendMessage(*conn, *conn, m)
-				}
+
+		for queueName := range s.queueNameToRecepient {
+			connections := s.queueNameToRecepient[queueName]
+			queue := s.queueNameToQueue[queueName]
+			message := queue.Dequeue()
+			for _, conn := range connections {
+				sendMessage(*conn, *conn, message)
 			}
 		}
+
 		s.lock.Unlock()
-	}
-}
-
-func testQueue(s *Server) {
-	count := 0
-	for {
-		time.Sleep(time.Second)
-		s.messages.Enqueue(RandomString(10))
-		count++
-
-		if count >= 10 {
-			break
-		}
 	}
 }
 
@@ -106,15 +93,27 @@ func (s *Server) parseMessage(r io.Reader, conn net.Conn) {
 		if err != nil {
 			log.Fatal("Error converting to struct:", err)
 		}
+		fmt.Println("Queue name:", m.QueueName)
 
 		if m.Type == "join" {
 			s.lock.Lock()
-			s.queues[m.QueueName] = append(s.queues[m.QueueName], &conn)
+			s.queueNameToRecepient[m.QueueName] = append(s.queueNameToRecepient[m.QueueName], &conn)
+
+			_, ok := s.queueNameToQueue[m.QueueName]
+			if !ok {
+				s.queueNameToQueue[m.QueueName] = NewQueue()
+			}
+
 			log.Printf("Joined queue %s\n", m.QueueName)
 			s.lock.Unlock()
 		}
 
 		if m.Type == "pub" {
+			_, ok := s.queueNameToQueue[m.QueueName]
+			if !ok {
+				s.queueNameToQueue[m.QueueName] = NewQueue()
+			}
+
 			s.messages.Enqueue(m.Message)
 			go s.handleQueue(r, conn)
 		}
@@ -138,6 +137,7 @@ func (s *Server) handleQueue(r io.Reader, conn net.Conn) {
 			}
 
 			s.messages.Enqueue(m.Message)
+			s.queueNameToQueue[m.QueueName].Enqueue(m.Message)
 		}
 	}
 }
