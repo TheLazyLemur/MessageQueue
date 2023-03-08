@@ -62,15 +62,20 @@ func (s *Server) Start() {
 	for {
 		s.lock.Lock()
 
-		for queueName := range s.queueNameToRecepient {
-			connections := s.queueNameToRecepient[queueName]
-			queue := s.queueNameToQueue[queueName]
+		wg := sync.WaitGroup{}
+		for queueName, cons := range s.queueNameToRecepient {
+			queue := s.GetQueueOrCreateIfNotExists(queueName)
 			message := queue.Dequeue()
-			for _, conn := range connections {
-				sendMessage(*conn, *conn, message)
+
+			for _, conn := range cons {
+				wg.Add(1)
+				go func(conn net.Conn) {
+					defer wg.Done()
+					sendMessage(conn, conn, message)
+				}(*conn)
 			}
 		}
-
+		wg.Wait()
 		s.lock.Unlock()
 	}
 }
@@ -97,22 +102,15 @@ func (s *Server) parseMessage(r io.Reader, conn net.Conn) {
 			s.lock.Lock()
 			s.queueNameToRecepient[m.QueueName] = append(s.queueNameToRecepient[m.QueueName], &conn)
 
-			_, ok := s.queueNameToQueue[m.QueueName]
-			if !ok {
-				s.queueNameToQueue[m.QueueName] = NewQueue()
-			}
-
+			_ = s.GetQueueOrCreateIfNotExists(m.QueueName)
 			log.Printf("Joined queue %s\n", m.QueueName)
 			s.lock.Unlock()
 		}
 
 		if m.Type == "pub" {
-			_, ok := s.queueNameToQueue[m.QueueName]
-			if !ok {
-				s.queueNameToQueue[m.QueueName] = NewQueue()
-			}
+			q := s.GetQueueOrCreateIfNotExists(m.QueueName)
 
-			s.queueNameToQueue[m.QueueName].Enqueue(m.Message)
+			q.Enqueue(m.Message)
 			go s.handleQueue(r, conn)
 		}
 	}
@@ -134,7 +132,8 @@ func (s *Server) handleQueue(r io.Reader, conn net.Conn) {
 				log.Fatal("Error converting to struct:", err)
 			}
 
-			s.queueNameToQueue[m.QueueName].Enqueue(m.Message)
+			q := s.GetQueueOrCreateIfNotExists(m.QueueName)
+			q.Enqueue(m.Message)
 		}
 	}
 }
@@ -150,4 +149,14 @@ func sendMessage(r io.Reader, conn net.Conn, message string) {
 	_ = binary.Write(buf, binary.LittleEndian, []byte(k))
 
 	_, _ = conn.Write(buf.Bytes())
+}
+
+func (s *Server) GetQueueOrCreateIfNotExists(queueName string) *Queue {
+	q, ok := s.queueNameToQueue[queueName]
+	if !ok {
+		s.queueNameToQueue[queueName] = NewQueue()
+		return s.queueNameToQueue[queueName]
+	}
+
+	return q
 }
