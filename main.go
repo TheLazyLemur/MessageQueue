@@ -25,9 +25,9 @@ func randomString(length int) string {
 }
 
 func main() {
-	flag.BoolVar(&isClient, "cl", true, "is client")
-	flag.BoolVar(&isConsumer, "c", true, "consumer mode")
-	flag.StringVar(&queueName, "q", "", "queue name")
+	flag.BoolVar(&isClient, "client", false, "is client")
+	flag.BoolVar(&isConsumer, "consumer", true, "consumer mode")
+	flag.StringVar(&queueName, "queue", "", "queue name")
 	flag.Parse()
 
 	if isClient {
