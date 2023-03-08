@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"lemur/messagequeue/queue"
 	"log"
 	"net"
 	"sync"
@@ -15,7 +16,7 @@ import (
 
 type Server struct {
 	queueNameToRecepient map[string][]*net.Conn
-	queueNameToQueue     map[string]*Queue
+	queueNameToQueue     map[string]*queue.Queue
 	lock                 sync.Mutex
 }
 
@@ -28,7 +29,7 @@ type ServerMessage struct {
 func NewServer() *Server {
 	return &Server{
 		queueNameToRecepient: make(map[string][]*net.Conn),
-		queueNameToQueue:     make(map[string]*Queue),
+		queueNameToQueue:     make(map[string]*queue.Queue),
 		lock:                 sync.Mutex{},
 	}
 }
@@ -151,10 +152,10 @@ func sendMessage(r io.Reader, conn net.Conn, message string) {
 	_, _ = conn.Write(buf.Bytes())
 }
 
-func (s *Server) GetQueueOrCreateIfNotExists(queueName string) *Queue {
+func (s *Server) GetQueueOrCreateIfNotExists(queueName string) *queue.Queue {
 	q, ok := s.queueNameToQueue[queueName]
 	if !ok {
-		s.queueNameToQueue[queueName] = NewQueue()
+		s.queueNameToQueue[queueName] = queue.NewQueue()
 		return s.queueNameToQueue[queueName]
 	}
 
