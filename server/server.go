@@ -15,7 +15,6 @@ import (
 
 type Server struct {
 	queueNameToRecepient map[string][]*net.Conn
-	messages             *Queue
 	queueNameToQueue     map[string]*Queue
 	lock                 sync.Mutex
 }
@@ -29,7 +28,6 @@ type ServerMessage struct {
 func NewServer() *Server {
 	return &Server{
 		queueNameToRecepient: make(map[string][]*net.Conn),
-		messages:             NewQueue(),
 		lock:                 sync.Mutex{},
 		queueNameToQueue:     make(map[string]*Queue),
 	}
@@ -114,7 +112,7 @@ func (s *Server) parseMessage(r io.Reader, conn net.Conn) {
 				s.queueNameToQueue[m.QueueName] = NewQueue()
 			}
 
-			s.messages.Enqueue(m.Message)
+			s.queueNameToQueue[m.QueueName].Enqueue(m.Message)
 			go s.handleQueue(r, conn)
 		}
 	}
@@ -136,7 +134,6 @@ func (s *Server) handleQueue(r io.Reader, conn net.Conn) {
 				log.Fatal("Error converting to struct:", err)
 			}
 
-			s.messages.Enqueue(m.Message)
 			s.queueNameToQueue[m.QueueName].Enqueue(m.Message)
 		}
 	}
