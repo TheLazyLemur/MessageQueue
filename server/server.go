@@ -28,8 +28,8 @@ type ServerMessage struct {
 func NewServer() *Server {
 	return &Server{
 		queueNameToRecepient: make(map[string][]*net.Conn),
-		lock:                 sync.Mutex{},
 		queueNameToQueue:     make(map[string]*Queue),
+		lock:                 sync.Mutex{},
 	}
 }
 
