@@ -2,16 +2,15 @@ package server
 
 import (
 	"bytes"
-	"crypto/rand"
-	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"io"
-	"lemur/messagequeue/queue"
 	"log"
 	"net"
 	"sync"
+
+	"lemur/messagequeue/queue"
 )
 
 type Server struct {
@@ -32,15 +31,6 @@ func NewServer() *Server {
 		queueNameToQueue:     make(map[string]*queue.Queue),
 		lock:                 sync.Mutex{},
 	}
-}
-
-func RandomString(length int) string {
-	randomBytes := make([]byte, length)
-	_, err := rand.Read(randomBytes)
-	if err != nil {
-		panic(err)
-	}
-	return base64.RawURLEncoding.EncodeToString(randomBytes)[:length]
 }
 
 func (s *Server) Start() {

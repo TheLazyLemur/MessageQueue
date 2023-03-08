@@ -4,9 +4,10 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"flag"
+	"time"
+
 	"lemur/messagequeue/client"
 	"lemur/messagequeue/server"
-	"time"
 )
 
 var (
