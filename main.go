@@ -32,7 +32,7 @@ func main() {
 
 	if isClient {
 		if isConsumer {
-			client := client.NewClient(":3000", client.Subscriber, queueName)
+			client := client.NewSubscriber(":3000", queueName)
 
 			client.SendJoinMessage()
 
@@ -42,10 +42,10 @@ func main() {
 		}
 
 		if !isConsumer {
-			client := client.NewClient(":3000", client.Publisher, queueName)
+			client := client.NewPublisher(":3000", queueName)
 
 			for {
-				time.Sleep(time.Second)
+				time.Sleep(time.Millisecond * 20)
 				client.PublishMessage(randomString(10))
 			}
 		}

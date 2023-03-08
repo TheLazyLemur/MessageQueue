@@ -9,19 +9,7 @@ import (
 	"net"
 )
 
-type ServerMessage struct {
-	Type      string
-	QueueName string
-	Message   string
-}
-
-type Client struct {
-	ServerAddrr string
-	conn        net.Conn
-	QueueName   string
-}
-
-func NewSubscriber(serverAddrr string, queueName string) *Client {
+func NewPublisher(serverAddrr string, queueName string) *Client {
 	c := &Client{
 		ServerAddrr: serverAddrr,
 		QueueName:   queueName,
@@ -36,11 +24,11 @@ func NewSubscriber(serverAddrr string, queueName string) *Client {
 	return c
 }
 
-func (c *Client) SendJoinMessage() {
+func (c *Client) PublishMessage(msg string) {
 	m := ServerMessage{
-		Type:      "join",
 		QueueName: c.QueueName,
-		Message:   "",
+		Type:      "pub",
+		Message:   msg,
 	}
 
 	jsonBytes, err := json.Marshal(m)
@@ -58,17 +46,5 @@ func (c *Client) SendJoinMessage() {
 
 	_, _ = c.conn.Write(buf.Bytes())
 
-}
-
-func (c *Client) ReadFromQueue() {
-	var mlen int32
-	_ = binary.Read(c.conn, binary.LittleEndian, &mlen)
-	if mlen == 0 {
-		return
-	}
-
-	buf := make([]byte, mlen)
-	_ = binary.Read(c.conn, binary.LittleEndian, &buf)
-
-	fmt.Println("Received: ", string(buf))
+	fmt.Println("Sending: ", string(m.Message))
 }
