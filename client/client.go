@@ -15,14 +15,14 @@ type ServerMessage struct {
 	Message   string
 }
 
-type Client struct {
+type SubscriberClient struct {
 	ServerAddrr string
 	conn        net.Conn
 	QueueName   string
 }
 
-func NewSubscriber(serverAddrr string, queueName string) *Client {
-	c := &Client{
+func NewSubscriber(serverAddrr string, queueName string) *SubscriberClient {
+	c := &SubscriberClient{
 		ServerAddrr: serverAddrr,
 		QueueName:   queueName,
 	}
@@ -33,10 +33,12 @@ func NewSubscriber(serverAddrr string, queueName string) *Client {
 	}
 	c.conn = conn
 
+	c.sendJoinMessage()
+
 	return c
 }
 
-func (c *Client) SendJoinMessage() {
+func (c *SubscriberClient) sendJoinMessage() {
 	m := ServerMessage{
 		Type:      "join",
 		QueueName: c.QueueName,
@@ -60,15 +62,15 @@ func (c *Client) SendJoinMessage() {
 
 }
 
-func (c *Client) ReadFromQueue() {
-	var mlen int32
-	_ = binary.Read(c.conn, binary.LittleEndian, &mlen)
-	if mlen == 0 {
-		return
+func (c *SubscriberClient) ReadFromQueue() {
+	for {
+		var mlen int32
+		_ = binary.Read(c.conn, binary.LittleEndian, &mlen)
+		if mlen != 0 {
+			buf := make([]byte, mlen)
+			_ = binary.Read(c.conn, binary.LittleEndian, &buf)
+
+			fmt.Println("Received: ", string(buf))
+		}
 	}
-
-	buf := make([]byte, mlen)
-	_ = binary.Read(c.conn, binary.LittleEndian, &buf)
-
-	fmt.Println("Received: ", string(buf))
 }

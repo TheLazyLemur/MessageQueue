@@ -9,8 +9,14 @@ import (
 	"net"
 )
 
-func NewPublisher(serverAddrr string, queueName string) *Client {
-	c := &Client{
+type PublisherClient struct {
+	ServerAddrr string
+	conn        net.Conn
+	QueueName   string
+}
+
+func NewPublisher(serverAddrr string, queueName string) *PublisherClient {
+	c := &PublisherClient{
 		ServerAddrr: serverAddrr,
 		QueueName:   queueName,
 	}
@@ -24,7 +30,7 @@ func NewPublisher(serverAddrr string, queueName string) *Client {
 	return c
 }
 
-func (c *Client) PublishMessage(msg string) {
+func (c *PublisherClient) PublishMessage(msg string) {
 	m := ServerMessage{
 		QueueName: c.QueueName,
 		Type:      "pub",

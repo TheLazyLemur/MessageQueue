@@ -27,18 +27,13 @@ func randomString(length int) string {
 func main() {
 	flag.BoolVar(&isClient, "client", false, "is client")
 	flag.BoolVar(&isConsumer, "consumer", true, "consumer mode")
-	flag.StringVar(&queueName, "queue", "", "queue name")
+	flag.StringVar(&queueName, "queue", "default", "queue name")
 	flag.Parse()
 
 	if isClient {
 		if isConsumer {
 			client := client.NewSubscriber(":3000", queueName)
-
-			client.SendJoinMessage()
-
-			for {
-				client.ReadFromQueue()
-			}
+			client.ReadFromQueue()
 		}
 
 		if !isConsumer {
