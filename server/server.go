@@ -50,23 +50,49 @@ func (s *Server) Start() {
 		}
 	}()
 
+	respCount := 0
+	respLock := sync.Mutex{}
+
 	for {
 		s.lock.Lock()
 
 		wg := sync.WaitGroup{}
+		respWg := sync.WaitGroup{}
 		for queueName, cons := range s.queueNameToRecepient {
 			queue := s.GetQueueOrCreateIfNotExists(queueName)
 			message := queue.Dequeue()
 
-			for _, conn := range cons {
-				wg.Add(1)
-				go func(conn net.Conn) {
-					defer wg.Done()
-					sendMessage(conn, conn, message)
-				}(*conn)
-			}
+			// Read responses from clients
+			go func() {
+				for _, conn := range cons {
+					respWg.Add(1)
+					go func(conn net.Conn) {
+						defer respWg.Done()
+						respBuf := make([]byte, 13)
+						_ = binary.Read(conn, binary.LittleEndian, &respBuf)
+
+						respLock.Lock()
+						respCount++
+						fmt.Printf("Ack: %d\n", respCount)
+						fmt.Println(string(respBuf))
+						respLock.Unlock()
+					}(*conn)
+					respWg.Wait()
+				}
+			}()
+
+			go func() {
+				for _, conn := range cons {
+					wg.Add(1)
+					go func(conn net.Conn) {
+						defer wg.Done()
+						sendMessage(conn, conn, message)
+					}(*conn)
+					wg.Wait()
+				}
+			}()
+
 		}
-		wg.Wait()
 		s.lock.Unlock()
 	}
 }

@@ -72,6 +72,8 @@ func (c *ConsumerClient) ReadFromQueue(consumeChan chan string) {
 
 			consumeChan <- string(buf)
 			//TODO: The consumer should acknowledge the message was received
+
+			c.conn.Write([]byte("ack" + string(buf)))
 		}
 	}
 }
