@@ -15,14 +15,14 @@ type ServerMessage struct {
 	Message   string
 }
 
-type SubscriberClient struct {
+type ConsumerClient struct {
 	ServerAddrr string
 	conn        net.Conn
 	QueueName   string
 }
 
-func NewConsumer(serverAddrr string, queueName string) *SubscriberClient {
-	c := &SubscriberClient{
+func NewConsumer(serverAddrr string, queueName string) *ConsumerClient {
+	c := &ConsumerClient{
 		ServerAddrr: serverAddrr,
 		QueueName:   queueName,
 	}
@@ -38,7 +38,7 @@ func NewConsumer(serverAddrr string, queueName string) *SubscriberClient {
 	return c
 }
 
-func (c *SubscriberClient) sendJoinMessage() {
+func (c *ConsumerClient) sendJoinMessage() {
 	m := ServerMessage{
 		Type:      "join",
 		QueueName: c.QueueName,
@@ -62,7 +62,7 @@ func (c *SubscriberClient) sendJoinMessage() {
 
 }
 
-func (c *SubscriberClient) ReadFromQueue(consumeChan chan string) {
+func (c *ConsumerClient) ReadFromQueue(consumeChan chan string) {
 	for {
 		var mlen int32
 		_ = binary.Read(c.conn, binary.LittleEndian, &mlen)
