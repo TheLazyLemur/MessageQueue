@@ -54,7 +54,7 @@ func runPublisher() {
 }
 
 func runConsumer() {
-	consumer := client.NewSubscriber(":3000", "test")
+	consumer := client.NewConsumer(":3000", "test")
 	consumerChan := make(chan string)
 	recievedMessages := make([]string, 0)
 

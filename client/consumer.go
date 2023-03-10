@@ -21,7 +21,7 @@ type SubscriberClient struct {
 	QueueName   string
 }
 
-func NewSubscriber(serverAddrr string, queueName string) *SubscriberClient {
+func NewConsumer(serverAddrr string, queueName string) *SubscriberClient {
 	c := &SubscriberClient{
 		ServerAddrr: serverAddrr,
 		QueueName:   queueName,
