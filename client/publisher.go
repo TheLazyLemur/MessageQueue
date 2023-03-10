@@ -51,6 +51,4 @@ func (c *PublisherClient) PublishMessage(msg string) {
 	_ = binary.Write(buf, binary.LittleEndian, jsonBytes)
 
 	_, _ = c.conn.Write(buf.Bytes())
-
-	fmt.Println("Sending: ", string(m.Message))
 }

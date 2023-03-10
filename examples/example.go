@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"time"
 
 	"lemur/messagequeue/client"
@@ -52,5 +53,14 @@ func runPublisher() {
 
 func runConsumer() {
 	consumer := client.NewSubscriber(":3000", "test")
-	consumer.ReadFromQueue()
+	consumerChan := make(chan string)
+
+	go func() {
+		for {
+			x := <-consumerChan
+			fmt.Println("Consuming", x)
+		}
+	}()
+
+	consumer.ReadFromQueue(consumerChan)
 }

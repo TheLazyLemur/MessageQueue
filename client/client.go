@@ -62,7 +62,7 @@ func (c *SubscriberClient) sendJoinMessage() {
 
 }
 
-func (c *SubscriberClient) ReadFromQueue() {
+func (c *SubscriberClient) ReadFromQueue(consumeChan chan string) {
 	for {
 		var mlen int32
 		_ = binary.Read(c.conn, binary.LittleEndian, &mlen)
@@ -70,7 +70,8 @@ func (c *SubscriberClient) ReadFromQueue() {
 			buf := make([]byte, mlen)
 			_ = binary.Read(c.conn, binary.LittleEndian, &buf)
 
-			fmt.Println("Received: ", string(buf))
+			consumeChan <- string(buf)
+			//TODO: The consumer should acknowledge the message was received
 		}
 	}
 }
