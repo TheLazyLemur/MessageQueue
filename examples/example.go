@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"lemur/messagequeue/client"
-	"lemur/messagequeue/server"
+	"github.com/thelazylemur/messagequeue/client"
+	"github.com/thelazylemur/messagequeue/server"
 )
 
 func randomString(length int) string {
@@ -32,7 +32,6 @@ func main() {
 	go func() {
 		time.Sleep(time.Second * 2)
 		runPublisher()
-
 	}()
 
 	select {}
@@ -45,20 +44,25 @@ func runServer() {
 
 func runPublisher() {
 	publisher := client.NewPublisher(":3000", "test")
+	publishedMessages := 0
 	for {
 		time.Sleep(time.Millisecond * 20)
 		publisher.PublishMessage(randomString(10))
+		publishedMessages++
+		fmt.Println("Published:", publishedMessages)
 	}
 }
 
 func runConsumer() {
 	consumer := client.NewSubscriber(":3000", "test")
 	consumerChan := make(chan string)
+	recievedMessages := make([]string, 0)
 
 	go func() {
 		for {
-			x := <-consumerChan
-			fmt.Println("Consuming", x)
+			consumedMessage := <-consumerChan
+			recievedMessages = append(recievedMessages, consumedMessage)
+			fmt.Println("Recieved:", len(recievedMessages))
 		}
 	}()
 

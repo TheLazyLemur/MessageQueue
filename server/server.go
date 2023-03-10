@@ -10,7 +10,7 @@ import (
 	"net"
 	"sync"
 
-	"lemur/messagequeue/queue"
+	"github.com/thelazylemur/messagequeue/queue"
 )
 
 type Server struct {
